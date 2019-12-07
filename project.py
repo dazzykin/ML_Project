@@ -4,7 +4,7 @@
 # Written in Python 3.6
 # Expected Runtime of project:
 # Arguments for this program:
-# 1) Training Data.gz
+# 1) Training Data.gza
 # 2) Test Data.gz
 # 3) Training labels.txt
 
@@ -13,7 +13,7 @@ import traceback
 import timeit
 import numpy as np
 
-# #Read Args
+# #Read Args 
 # file1_train = sys.argv[0]
 # file2_test = sys.argv[1]
 # file3_trainLabels = sys.argv[2]
@@ -31,6 +31,7 @@ EXIT_SUCCESS = 1
 TrainData = None
 TestData = None
 TrainLabels = {}
+TrainLabelsList = []
 
 
 # Step 1: Read Data. Train -> List , Test -> List, Labels (=target) -> dict
@@ -51,7 +52,7 @@ def readList(fileName=""):
             for item in row.split():
                 rowVec.append(float(item))
 
-            # Recording highest no. of columns for ther purpose of knowing how many random weights to choose later.
+            # Recording highest no. of columns for ther purpose of knowing how many random weights to choose later. 
             # if len(rowVec) > No_of_columns:
             # No_of_columns   = len(rowVec)
             returnList.append(rowVec)
@@ -104,6 +105,15 @@ def readDict(fileName=""):
     return returnDict;
 
 
+def convertDict2List(my_dict={}):
+    returnList = []
+
+    for k, v in my_dict.items():
+        returnList.append([k, v])
+
+    return returnList
+
+
 # Step 2: Split Train Data into 2 Subsets (row wise) -> "train" (70%) and "Validation" (30%)
 
 def dataSpilt(part1_percent=0.0, dataSet=np.array):
@@ -122,7 +132,6 @@ def dataSpilt(part1_percent=0.0, dataSet=np.array):
 
 
 # Step 3: Calc Correlation of each column w.r.t the "target" ie the labels
-
 def getPearsonCorrelation(List1, List2):
     corr = 0.0
     corr = (getSpread(List1) * getSpread(List2)) / (getSD(List1) * getSD(List2))
@@ -147,25 +156,29 @@ def getSD(List1=[]):
 
 
 def calcCorrelations(dataSet=np.array):
-    a=1
+    scores = []
+
+    for j in np.transpose(dataSet):
+        scores.append(getPearsonCorrelation(dataSet[:, j]), TrainLabels)
+
+    scores.sort(reverse=True)
+    return scores
+
 
 # Step 4: Arrange the correlations in Descending order of absolute magnitude.
 
 
-
+def getTopFeatures(No_of_features=0, feature_ranks=[]):
+    a = 1
 
 
 # Step 5: Extract the top 20 Columns
-
-def getTopFeatures(No_of_features=0,feature_ranks=[]):
-    finalFeatureList=[]
-    return finalFeatureList
 
 # Step 6: Train your SVM on extracted features
 
 # Step 7: Predict for test data
 
-# Main Function
+# Main Function 
 if __name__ == '__main__':
     # List all files
     # from os import listdir
@@ -176,6 +189,8 @@ if __name__ == '__main__':
     TrainData = readList_np(file1_train)
     TestData = readList(file2_test)
 
-    print('Run Time: ', (timeit.default_timer()) - startTime)
+    TrainLabelsList = convertDict2List(TrainLabels)
+
+    print('Run Time: ', (timeit.default_timer()) - startTime)  
 
 
