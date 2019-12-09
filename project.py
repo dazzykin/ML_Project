@@ -11,6 +11,7 @@
 import sys
 import traceback
 import timeit
+import random
 import numpy as np
 from sklearn import svm;
 from sklearn import model_selection
@@ -122,20 +123,43 @@ def readList_np(fileName=""):
 #     return returnList
 
 # Step 2: Split Train Data into 2 Subsets (row wise) -> "train" (70%) and "Validation" (30%)
-def dataSpilt(part1_percent=0.0, trainDataSet=np.array):
+def dataSpilt(part1_percent=0.0, trainDataSet=np.array, trainLabels=np.array):
     end = len(trainDataSet)
-    mid = end * (part1_percent / 100)
-    return_trainData = np.array()
-    return_valData = np.array()
+    mid = int(end * (part1_percent / 100))
+
+    return_trainData = np.array([], dtype=np.int8)
+    return_valData = np.array([], dtype=np.int8)
+    return_trainLabels = np.array([], dtype=np.int8)
+    return_valLabels = np.array([], dtype=np.int8)
+
+    tempRowNums_train = []
+    tempRowNums_val = []
 
     try:
-        for idx in (0, mid, 1):
-            return1 = np.append(return1, trainDataSet[idx])
+
+        # Randomize the split
+        while len(tempRowNums_train) < mid:
+            a = random.randint(0, end)
+            if not a in tempRowNums_train:
+                tempRowNums_train.append(a)
+
+        # Get train data, Labels
+        for k in tempRowNums_train:
+            np.append(return_trainData, trainDataSet[k,])
+            return_trainData.append(trainDataSet[k,])
+            return_trainLabels.append(trainLabels[k,])
+
+        # Get val Data, Labels
+        for k in range(0, end, 1):
+            if not k in tempRowNums_train:
+                return_valData.append(trainDataSet[k,])
+                return_valLabels.append(trainLabels[k,])
+
     except:
         a = 1
     finally:
         a = 1
-    return return_trainData, return_valData
+    return return_trainData, return_trainLabels, return_valData, return_valLabels
 
 
 # Step 3: Calc Correlation of each column w.r.t the "target" ie the labels and arrange in Descending order of absolute magnitude.
@@ -237,19 +261,16 @@ if __name__ == '__main__':
     # Feature_ranking=calcCorrelations(TrainData, TrainLabels)
 
     # #Get top 20 Features
-    Features_selected = getTopFeatures(5, Feature_ranking)
+    # Features_selected= getTopFeatures(5,Feature_ranking)
     # print("Features Selected are: "+ str(Features_selected))
 
     # Split  training dataset into Train data and Validation Data
-    tempObject = dataSpilt(70, TrainData)
-    Val_Data = tempObject[1]
-    TrainData1 = tempObject[0]
+    tempObject = dataSpilt(70, TrainData, TrainLabels)
 
-    # Split  Training Labels into Train Labels and Validation Labels
-    tempObject = None
-    tempObject = dataSpilt(70, TrainLabels)
-    Val_Labels = tempObject[1]
-    TrainLabels1 = tempObject[0]
+    TrainData1 = tempObject[0]
+    TrainLabels1 = tempObject[1]
+    Val_Data = tempObject[2]
+    Val_Labels = tempObject[3]
 
     # Train Model
     # clf=trainSVM(np.array(Features_selected,int),TrainData1,Val_Data,Val_Labels)
