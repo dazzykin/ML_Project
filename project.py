@@ -31,10 +31,12 @@ EXIT_FAILURE = 0
 EXIT_SUCCESS = 1
 TrainData = None
 TestData = None
-TrainLabels = {}
-TrainLabelsList = []
+TrainLabels = None
+# TrainLabelsList=[]
 Val_Data = []
 TrainData1 = None
+No_of_rows = None
+No_of_columns = None
 
 
 # Step 1: Read Data. Train -> List , Test -> List, Labels (=target) -> dict
@@ -44,10 +46,12 @@ def readList(fileName=""):
     rowVec = []
     nom = 0
     tempFile = None
+    global No_of_rows
+    global No_of_columns
     try:
         tempFile = (open(fileName, 'r')).read()  # open file in read only mode
         # Recording number of rows
-        # No_of_rows=len(tempFile.splitlines())
+        No_of_rows = len(tempFile.splitlines())
 
         for row in tempFile.splitlines():
             rowVec = []
@@ -56,8 +60,9 @@ def readList(fileName=""):
                 rowVec.append(float(item))
 
             # Recording highest no. of columns for ther purpose of knowing how many random weights to choose later.
-            # if len(rowVec) > No_of_columns:
-            # No_of_columns   = len(rowVec)
+            if len(rowVec) > No_of_columns:
+                No_of_columns = len(rowVec)
+
             returnList.append(rowVec)
     except:
         print("Unable to open {} File".format(fileName));
@@ -74,7 +79,8 @@ def readList(fileName=""):
 def readList_np(fileName=""):
     returnList = []
     try:
-        returnList = np.loadtxt(fileName, float)
+        returnList = np.loadtxt(fileName, dtype=np.int8)
+
     except:
         print("Unable to open {} data".format(fileName));
         traceback.print_exc();
@@ -84,8 +90,7 @@ def readList_np(fileName=""):
         a = 1
     return returnList
 
-
-def readDict(fileName=""):
+    # def readDict(fileName=""):
     tempFile = None;
     returnDict = dict();
 
@@ -108,14 +113,13 @@ def readDict(fileName=""):
     return returnDict;
 
 
-def convertDict2List(my_dict={}):
-    returnList = []
+# def convertDict2List(my_dict={}):
+#     returnList=[]
 
-    for k, v in my_dict.items():
-        returnList.append([k, v])
+#     for k,v in my_dict.items():
+#         returnList.append([k,v])
 
-    return returnList
-
+#     return returnList
 
 # Step 2: Split Train Data into 2 Subsets (row wise) -> "train" (70%) and "Validation" (30%)
 def dataSpilt(part1_percent=0.0, trainDataSet=np.array):
@@ -135,43 +139,63 @@ def dataSpilt(part1_percent=0.0, trainDataSet=np.array):
 
 
 # Step 3: Calc Correlation of each column w.r.t the "target" ie the labels and arrange in Descending order of absolute magnitude.
-def getPearsonCorrelation(List1, List2):
+def getPearsonCorrelation(List1=np.array, List2=np.array):
     corr = 0.0
-    corr = (getSpread(List1) * getSpread(List2)) / (getSD(List1) * getSD(List2))
+
+    spread1 = getCovariance(List1)
+    spread2 = getCovariance(List2)
+
+    stdDev1 = getSD(List1)
+    print("SD1: " + str(stdDev1))
+    stdDev2 = getSD(List2)
+    print("SD2: " + str(stdDev2))
+
+    corr = (spread1 * spread2) / (stdDev1 * stdDev2)
     corr = abs(corr)
+    print("My Correlation: {}".format(corr))
+    #  print("Numpy Corr:"+str(float(np.corrcoef(List1,List2))))
     return corr
 
 
-def getSpread(List1=[]):
+def getCovariance(List1=np.array):
     mean = sum(List1) / len(List1)
-    returnVar = 0.0
+    returnVal = 0.0
     for k in List1:
-        returnVar += (List1[k] - mean)
-    return (returnVar)
+        returnVal = returnVal + (k - mean)
+
+    return (returnVal)
 
 
 def getSD(List1=[]):
     mean = sum(List1) / len(List1)
-    returnVar = 0.0
+    returnVal = 0.0
     for k in List1:
-        returnVar += (List1[k] - mean) ** 2
+        # print("SD: "+str(returnVal+((k - mean)**2)))
+        returnVal = returnVal + ((k - mean) ** 2)
 
-    return (returnVar ** 0.5)
+    return (returnVal ** 0.5)
 
 
 def calcCorrelations(dataSet=np.array, targetLabels=np.array):
     scores = []
+    # print(str(dataSet)))
+    # print(str(np.transpose(dataSet)))
 
-    for j in np.transpose(dataSet):
-        scores.append(getPearsonCorrelation(dataSet[:, j]), targetLabels[0:, ])
+    # for j in np.transpose(dataSet):
+    for j in range(0, len(dataSet[0]), 1):
+        # print(str(dataSet[:,j]))
+        scores.append([getPearsonCorrelation(dataSet[:, j], targetLabels[:, 0]), j])
 
     scores.sort(reverse=True)
-    return scores
+    scores_np = np.array(scores, dtype=np.int8)
+    # Sort Scores array based one 0th Column
+    scores_np_sorted = scores_np[scores_np[:, 0].argsort()]
+    return scores_np_sorted
 
 
 # Step 4: Extract the top x Columns
-def getTopFeatures(No_of_features=0, feature_ranks=[]):
-    return feature_ranks[0:No_of_features]
+def getTopFeatures(No_of_features=0, feature_ranks=np.array):
+    return feature_ranks[0:No_of_features, :0]
 
 
 # Step 6: Train your SVM on extracted features
@@ -202,19 +226,19 @@ if __name__ == '__main__':
     Features_selected = None
 
     # Read Files
-    TrainLabels = readDict(file3_trainLabels)
+    TrainLabels = readList_np(file3_trainLabels)
     TrainData = readList_np(file1_train)
-    TestData = readList(file2_test)
+    TestData = readList_np(file2_test)
 
     # Convert Test labels from dictonary to numpy array
-    TrainLabelsList = np.array(convertDict2List(TrainLabels), float)
+    # TrainLabelsList=np.array(convertDict2List(TrainLabels),float)
 
-    # Calculate pearson Correlation of each column with target label data
-    Feature_ranking = calcCorrelations(TrainData, TrainLabelsList)
+    # #Calculate pearson Correlation of each column with target label data
+    # Feature_ranking=calcCorrelations(TrainData, TrainLabels)
 
-    # Get top 20 Features
-    Features_selected = getTopFeatures(20, Feature_ranking)
-    print("Features Selected are: " + str(Features_selected))
+    # #Get top 20 Features
+    Features_selected = getTopFeatures(5, Feature_ranking)
+    # print("Features Selected are: "+ str(Features_selected))
 
     # Split  training dataset into Train data and Validation Data
     tempObject = dataSpilt(70, TrainData)
@@ -223,12 +247,13 @@ if __name__ == '__main__':
 
     # Split  Training Labels into Train Labels and Validation Labels
     tempObject = None
-    tempObject = dataSpilt(70, TrainLabelsList)
+    tempObject = dataSpilt(70, TrainLabels)
     Val_Labels = tempObject[1]
     TrainLabels1 = tempObject[0]
 
     # Train Model
-    clf = trainSVM(np.array(Features_selected, int), TrainData1, Val_Data, Val_Labels)
+    # clf=trainSVM(np.array(Features_selected,int),TrainData1,Val_Data,Val_Labels)
+    clf = trainSVM(TrainData, TrainData1, Val_Data, Val_Labels)
 
     # Predict Labels
     predict(TestData, clf)
