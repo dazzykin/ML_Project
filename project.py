@@ -264,7 +264,7 @@ def calcCorrelations(dataSet=np.array, targetLabels=np.array):
         # print(str(dataSet[:,j]))
         scores.append([getPearsonCorrelation(dataSet[:, j], targetLabels[:, 0]), j])
 
-    scores.sort(reverse=True)
+    #scores.sort(reverse=True)
     scores_np = np.array(scores, dtype=np.int8)
     # Sort Scores array based one 0th Column
     scores_np_sorted = scores_np[scores_np[:, 0].argsort()]
@@ -304,9 +304,9 @@ if __name__ == '__main__':
     Features_selected = None
 
     # Read Files
-    TrainLabels = readList_np(file3_trainLabels)
-    TrainData = readList_np(file1_train)
-    TestData = readList_np(file2_test)
+    #TrainLabels = readList_np(file3_trainLabels)
+    #TrainData = readList_np(file1_train)
+    #TestData = readList_np(file2_test)
 
     # Convert Test labels from dictonary to numpy array
     # TrainLabelsList=np.array(convertDict2List(TrainLabels),float)
@@ -319,12 +319,30 @@ if __name__ == '__main__':
     # print("Features Selected are: "+ str(Features_selected))
 
     # Split  training dataset into Train data and Validation Data
-    tempObject = dataSpilt(70, TrainData, TrainLabels)
+    #tempObject = dataSpilt(70, TrainData, TrainLabels)
+
+
+    #isk
+    #read data
+    TrainData= import_data(file1_train)
+    TrainLabels= import_labels(file3_trainLabels)
+    TestData= import_data(file2_test)
+
+    tempObject = shuffle(TrainData, TrainLabels)
+
 
     TrainData1 = tempObject[0]
     TrainLabels1 = tempObject[1]
     Val_Data = tempObject[2]
     Val_Labels = tempObject[3]
+
+    #Calculate pearson Correlation of each column with target label data
+    Feature_ranking=calcCorrelations(TrainData, TrainLabels)
+
+    #Get top 20 Features
+    Features_selected= getTopFeatures(20,Feature_ranking)
+    print("Features Selected are: "+ str(Features_selected))
+
 
     # Train Model
     # clf=trainSVM(np.array(Features_selected,int),TrainData1,Val_Data,Val_Labels)
