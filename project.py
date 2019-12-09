@@ -15,6 +15,8 @@ import random
 import numpy as np
 from sklearn import svm;
 from sklearn import model_selection
+import os;
+import traceback;
 
 # #Read Args
 # file1_train = sys.argv[0]
@@ -38,6 +40,58 @@ Val_Data = []
 TrainData1 = None
 No_of_rows = None
 No_of_columns = None
+
+
+
+
+EXIT_FAILURE = 0x1;
+EXIT_SUCCESS = 0x0;
+
+VALIDATION_SPLIT = 0.7;
+
+convert_to_int = lambda row: [int(cell) for cell in row];
+
+
+def importer(method):
+    def wrap(afname, *args, **kwargs):
+
+        data = [];
+        try:
+            print("Importing " + afname);
+            fp = open(afname, 'r');
+            data = method(fp);
+        except IOError:
+            traceback.print_stack();
+            sys.exit(EXIT_FAILURE);
+        return data;
+    return wrap;
+
+@importer
+def import_labels(fp):
+    labels = [];
+    for row in fp:
+        labels.append(convert_to_int(row.split())[0x0]);
+    return labels;
+
+def shuffle(avFeatures, avLables):
+
+    mapper  = list(zip(avLables, avFeatures));
+    random.shuffle(mapper);
+    training_limit = int(len(mapper) * VALIDATION_SPLIT);
+    avLables, avFeatures = zip(*mapper);
+
+    avLables = np.array(avLables);
+    avFeatures = np.array(avFeatures);
+
+    return avLables[:training_limit], avFeatures[:training_limit], avLables[training_limit:], avFeatures[training_limit:];
+
+
+@importer
+def import_data(fp):
+    data = [];
+    for row in fp:
+        data.append(convert_to_int(row.split()));
+    return data;
 
 
 # Step 1: Read Data. Train -> List , Test -> List, Labels (=target) -> dict
