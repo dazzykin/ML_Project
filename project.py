@@ -265,8 +265,8 @@ def calcCorrelations(dataSet1=np.array, targetLabels1=np.array):
     for j in range(0, len(dataSet[0]), 1):
         print(str(dataSet[:, j]))
         print(type(dataSet[:, j]))
-        print(str(targetLabels[:, 0]))
-        print(type(targetLabels[:, 0]))
+        print(str(targetLabels))
+        # print(type(targetLabels[:, 0]))
 
         corr = getPearsonCorrelation(dataSet[:, j], targetLabels)
         scores.append([corr, j])
