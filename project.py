@@ -41,9 +41,6 @@ TrainData1 = None
 No_of_rows = None
 No_of_columns = None
 
-
-
-
 EXIT_FAILURE = 0x1;
 EXIT_SUCCESS = 0x0;
 
@@ -64,7 +61,9 @@ def importer(method):
             traceback.print_stack();
             sys.exit(EXIT_FAILURE);
         return data;
+
     return wrap;
+
 
 @importer
 def import_labels(fp):
@@ -73,9 +72,9 @@ def import_labels(fp):
         labels.append(convert_to_int(row.split())[0x0]);
     return labels;
 
-def shuffle(avFeatures, avLables):
 
-    mapper  = list(zip(avLables, avFeatures));
+def shuffle(avFeatures, avLables):
+    mapper = list(zip(avLables, avFeatures));
     random.shuffle(mapper);
     training_limit = int(len(mapper) * VALIDATION_SPLIT);
     avLables, avFeatures = zip(*mapper);
@@ -83,7 +82,8 @@ def shuffle(avFeatures, avLables):
     avLables = np.array(avLables);
     avFeatures = np.array(avFeatures);
 
-    return avLables[:training_limit], avFeatures[:training_limit], avLables[training_limit:], avFeatures[training_limit:];
+    return avLables[:training_limit], avFeatures[:training_limit], avLables[training_limit:], avFeatures[
+                                                                                              training_limit:];
 
 
 @importer
@@ -254,17 +254,24 @@ def getSD(List1=[]):
     return (returnVal ** 0.5)
 
 
-def calcCorrelations(dataSet=np.array, targetLabels=np.array):
+def calcCorrelations(dataSet1=np.array, targetLabels1=np.array):
     scores = []
     # print(str(dataSet)))
     # print(str(np.transpose(dataSet)))
+    dataSet = np.array(dataSet1, dtype=np.int8)
+    targetLabels = np.array(targetLabels1, dtype=np.int8)
 
     # for j in np.transpose(dataSet):
     for j in range(0, len(dataSet[0]), 1):
-        # print(str(dataSet[:,j]))
-        scores.append([getPearsonCorrelation(dataSet[:, j], targetLabels[:, 0]), j])
+        print(str(dataSet[:, j]))
+        print(type(dataSet[:, j]))
+        print(str(targetLabels[:, 0]))
+        print(type(targetLabels[:, 0]))
 
-    #scores.sort(reverse=True)
+        corr = getPearsonCorrelation(dataSet[:, j], targetLabels)
+        scores.append([corr, j])
+
+    # scores.sort(reverse=True)
     scores_np = np.array(scores, dtype=np.int8)
     # Sort Scores array based one 0th Column
     scores_np_sorted = scores_np[scores_np[:, 0].argsort()]
@@ -304,9 +311,9 @@ if __name__ == '__main__':
     Features_selected = None
 
     # Read Files
-    #TrainLabels = readList_np(file3_trainLabels)
-    #TrainData = readList_np(file1_train)
-    #TestData = readList_np(file2_test)
+    # TrainLabels = readList_np(file3_trainLabels)
+    # TrainData = readList_np(file1_train)
+    # TestData = readList_np(file2_test)
 
     # Convert Test labels from dictonary to numpy array
     # TrainLabelsList=np.array(convertDict2List(TrainLabels),float)
@@ -319,30 +326,27 @@ if __name__ == '__main__':
     # print("Features Selected are: "+ str(Features_selected))
 
     # Split  training dataset into Train data and Validation Data
-    #tempObject = dataSpilt(70, TrainData, TrainLabels)
+    # tempObject = dataSpilt(70, TrainData, TrainLabels)
 
-
-    #isk
-    #read data
-    TrainData= import_data(file1_train)
-    TrainLabels= import_labels(file3_trainLabels)
-    TestData= import_data(file2_test)
+    # isk
+    # read data
+    TrainData = import_data(file1_train)
+    TrainLabels = import_labels(file3_trainLabels)
+    TestData = import_data(file2_test)
 
     tempObject = shuffle(TrainData, TrainLabels)
-
 
     TrainData1 = tempObject[0]
     TrainLabels1 = tempObject[1]
     Val_Data = tempObject[2]
     Val_Labels = tempObject[3]
 
-    #Calculate pearson Correlation of each column with target label data
-    Feature_ranking=calcCorrelations(TrainData, TrainLabels)
+    # Calculate pearson Correlation of each column with target label data
+    Feature_ranking = calcCorrelations(TrainData, TrainLabels)
 
-    #Get top 20 Features
-    Features_selected= getTopFeatures(20,Feature_ranking)
-    print("Features Selected are: "+ str(Features_selected))
-
+    # Get top 20 Features
+    Features_selected = getTopFeatures(20, Feature_ranking)
+    print("Features Selected are: " + str(Features_selected))
 
     # Train Model
     # clf=trainSVM(np.array(Features_selected,int),TrainData1,Val_Data,Val_Labels)
