@@ -1,3 +1,8 @@
+'''
+Students: Iskandar Askarov, Ketki Ambekar
+Course Project
+'''
+
 import sys;
 import csv;
 import statistics as sts;
@@ -8,6 +13,7 @@ from sklearn import linear_model;
 import os;
 import traceback;
 import pickle;
+from datetime import datetime
 
 EXIT_FAILURE = 0x1;
 EXIT_SUCCESS = 0x0;
@@ -110,14 +116,12 @@ def train_models(trainingData, trainingLabels):
         'logreg': linear_model.LogisticRegression()
     };
 
-    print("Training LinearSVC");
+    print("Training LinearSVC..");
     models['linsvc'].fit(trainingData, trainingLabels);
-    print("Training SVM.SVC")
+    print("Training SVM.SVC..")
     models['svc'].fit(trainingData, trainingLabels);
-    print("Training Logistic Regression")
+    print("Training Logistic Regression..")
     models['logreg'].fit(trainingData, trainingLabels);
-
-    pickle.dump(models, open('trained_models', 'wb'));
 
     return models;
 
@@ -175,8 +179,18 @@ if __name__ == '__main__':
     labels = import_labels(sys.argv[0x2]);
     test = np.array(import_data(sys.argv[0x3]));
 
-    report = generate_report("Selected_Features.txt");
-    report1= generate_report("Predicted_Labels.txt");
+    now = datetime.now()
+
+    models = None;
+    will_train = False;
+
+    tstamp = now.strftime("%d-%b-%Y_%H_%M_%S_%f");
+
+    selected_features_name = "Selected_Features_" + tstamp + ".txt";
+    predicted_labels_name = "Predicted_Features_" + tstamp + ".txt";
+
+    report = generate_report(selected_features_name);
+    report1= generate_report(predicted_labels_name);
 
     print("Transforming..")
     data, labels = transform_np(data, labels);
@@ -184,28 +198,27 @@ if __name__ == '__main__':
     print("Calculating chi-square")
     train_idx = chi_sqr(data, labels, 15);
 
-    report.write("Selected feature indexes");
-    report.write(str(train_idx));
-
     print("Shuffling")
     trainLabels, trainData, valLabels, valData = shuffle(data, labels);
 
-    print("Feature extraction")
+    print("Feature extraction on training data")
     trainingFeatures = feature_extraction(trainData, train_idx);
-    print("Feature extraction")
+
+    print("Feature extraction on validation data")
     validationFeatures = feature_extraction(valData, train_idx);
 
-    print("Training")
-    if(os.path.exists('trained_models')):
-        models = pickle.load(open('trained_models', 'rb'));
-    else:
-        models = train_models(trainData, trainLabels);
+    report.write("Selected feature indexes");
+    report.write(str(train_idx));
 
-    print("Validate")
-    validate_models(valData, valLabels, models);
+    print("Training models")
+    models = train_models(trainingFeatures, trainLabels);
 
-    print("Predict");
-    predictions = test_models(test, models);
+    print("Validating models")
+    validate_models(validationFeatures, valLabels, models);
+
+    print("Predicting");
+    testFeatures = feature_extraction(test, train_idx);
+    predictions = test_models(testFeatures, models);
 
     report1.write("Predicted values:");
     for idx in range(0,len(predictions),1):
@@ -214,4 +227,4 @@ if __name__ == '__main__':
     report.close();
     report1.close();
 
-    print("Done");
+    print("Generated reports: {} and {}".format(selected_features_name, predicted_labels_name))
